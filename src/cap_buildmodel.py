@@ -1,3 +1,4 @@
+from __future__ import division
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -5,13 +6,24 @@ from sklearn.svm import SVC
 from sklearn.preprocessing import StandardScaler
 from sklearn import svm
 from sklearn.feature_extraction.text import TfidfVectorizer
-from __future__ import division
 from sklearn.naive_bayes import MultinomialNB
 import nltk
 import re
 from nltk.stem import SnowballStemmer
 from sklearn.model_selection import cross_val_score
 import matplotlib.pyplot as plt
+import cPickle as pickle
+
+class Cap_buildmodel(object):
+    def __init__(self):
+        #self.df = clean.load_and_clean('data.json')
+        #self.text_features = ct.html_table(df['name'], df['description'])
+        self.X_train = None
+        self.y_train = None
+        self.X_test = None
+        self.y_test = None
+        self.predictions = None
+        self.json_model = None
 
 def process_file(filename):
     #separate the labels from the text
@@ -28,28 +40,6 @@ def process_file(filename):
     y = np.array(label)
     return X,y
 
-
-def do_stemming(X):
-    stemmed = []
-    for item in X:
-        stemmed.append(SnowballStemmer('english').stem(f))
-    return stemmed
-
-def train_split(X,y):
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.4, random_state=0)
-    return X_train, X_test, y_train, y_test
-
-def vectorize(X):
-    v = TfidfVectorizer(stop_words='english',strip_accents='unicode', lowercase=True)
-    vector = v.fit_transform(X).toarray()
-    #words = v.get_feature_names()
-    return v
-
-def classify(X,y):
-    classifier = MultinomialNB()
-    classifier.fit(train_vectors, y_train)
-    return classifier
-
 def clean_data(X):
     # Function: lowercase (also completed in vecorizer),
     #           remove special characters, remove numbers
@@ -63,6 +53,42 @@ def clean_data(X):
         l.append(regex.sub(' ', i))
     return np.array(l)
 
+def do_stemming(X):
+    stemmed = []
+    for item in X:
+        stemmed.append(SnowballStemmer('english').stem(item))
+    return stemmed
+
+def tokenize(text):
+    tokens = nltk.word_tokenize(text)
+    stems = do_stemming(tokens)
+    return stems
+
+def train_split(X,y):
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.4, random_state=0)
+    return X_train, X_test, y_train, y_test
+
+def vectorize_fit(X):
+    v = TfidfVectorizer(tokenizer=tokenize,stop_words='english',strip_accents='unicode', lowercase=True)
+    vectorizer = v.fit_transform(X) ## removed nparray()
+    words = v.get_feature_names()
+    #top_features(v,words,10)
+    return v,vectorizer
+# testing older code
+def make_vecs(X):
+    v = TfidfVectorizer(tokenizer=tokenize,stop_words='english',strip_accents='unicode', lowercase=True)
+    return v.fit(X) ## fit is returning vecorizer
+
+def vectorize_trans(v, X):
+    vector = v.transform(X) ## removed nparray()
+    words = v.get_feature_names()
+    top_features(v,words,10)
+    return vector
+
+def clf_model(X,y):
+    classifier = MultinomialNB()
+    classifier.fit(X, y)
+    return classifier # returns the model
 
 # def pipeline(X,y):
 #     pipeline = Pipeline([
@@ -91,24 +117,17 @@ def predict(classifier, X):
     predictions= classifier.predict(d)
     return prediction
 
+def top_features(classifier, words, n):
+    #input: classifier, int
+        #classifier = tfidf vectorizer
+        #n = number of top words to report
+    #output: list of words
+    indices = np.argsort(classifier.idf_)[::-1]
+    [words[i] for i in indices[:10]]
+    print "Top words are:"
+    for i in indices[:10]:
+        print words[i]
 # examples = ['hate hate hate', "great fun awsome", "sucks"]
-
-def plot_roc(probs, y_true, title, xlabel, ylabel):
-    # ROC
-    tpr, fpr, thresholds = roc_curve(v_probs, y_test)
-
-    plt.hold(True)
-    plt.plot(fpr, tpr)
-
-    # 45 degree line
-    xx = np.linspace(0, 1.0, 20)
-    plt.plot(xx, xx, color='red')
-
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
-    plt.title(title)
-
-    plt.show()
 
 
 def plot_datatwin(p,n,tme):
@@ -135,43 +154,6 @@ def plot_datatwin(p,n,tme):
 
     plt.show()
 
-def roc_curve(probabilities, labels):
-    '''
-    INPUT: numpy array, numpy array
-    OUTPUT: list, list, list
-
-    Take a numpy array of the predicted probabilities and a numpy array of the
-    true labels.
-    Return the True Positive Rates, False Positive Rates and Thresholds for the
-    ROC curve.
-    '''
-
-    thresholds = np.sort(probabilities)
-
-    tprs = []
-    fprs = []
-    labels = np.array(map(float, labels))
-    print y_float
-    num_positive_cases = sum(labels)
-    num_negative_cases = len(labels) - num_positive_cases
-
-    for threshold in thresholds:
-        # With this threshold, give the prediction of each instance
-        predicted_positive = probabilities >= threshold
-        # Calculate the number of correctly predicted positive cases
-        true_positives = np.sum(predicted_positive * labels)
-        # Calculate the number of incorrectly predicted positive cases
-        false_positives = np.sum(predicted_positive) - true_positives
-        # Calculate the True Positive Rate
-        tpr = true_positives / float(num_positive_cases)
-        # Calculate the False Positive Rate
-        fpr = false_positives / float(num_negative_cases)
-
-        fprs.append(fpr)
-        tprs.append(tpr)
-
-    return tprs, fprs, thresholds.tolist()
-
 
 def plot_importance(clf, X, max_features=10):
     '''Plot feature importance'''
@@ -193,4 +175,21 @@ def plot_importance(clf, X, max_features=10):
 
 
 #plot_roc(v_probs, y_test,"ROC plot of churn data","False Positive Rate (1 - Specificity)", "True Positive Rate (Sensitivity, Recall)")
-plot_datatwin(pos,neg,len(neg))
+#plot_datatwin(pos,neg,len(neg))
+
+if __name__ == '__main__':
+    X, y = process_file('/Users/janehillyard/Documents/capstone/hate-speech/data/sentimenttrain.txt')
+    X = clean_data(X)
+    X_train, X_test, y_train, y_test = train_split(X,y)
+    #tfidf,vectorizer = vectorize_fit(X_train)
+    print len(X_test), len(y_test)
+    test_vec = make_vecs(X_test)
+    #mymodel  = clf_model(vectorizer,y_train)
+    mymodel  = clf_model(test_vec.transform(X_test),y_test)
+    test_vectors = test_vec.transform(X_test) #vectorize_trans(tfidf,X_test)
+    print score(mymodel,test_vectors,y_test) # used to be test_vectors
+
+    with open('/Users/janehillyard/Documents/capstone/hate-speech/data/vectorizer.pkl', 'w') as f:
+        pickle.dump(test_vec, f)
+    with open('/Users/janehillyard/Documents/capstone/hate-speech/data/mymodel.pkl', 'w') as f:
+        pickle.dump(mymodel, f)
