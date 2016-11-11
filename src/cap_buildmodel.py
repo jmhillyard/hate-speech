@@ -13,6 +13,7 @@ from nltk.stem import SnowballStemmer
 from sklearn.model_selection import cross_val_score
 import matplotlib.pyplot as plt
 import cPickle as pickle
+import clean_data as cld
 
 class Cap_buildmodel(object):
     def __init__(self):
@@ -68,22 +69,22 @@ def train_split(X,y):
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.4, random_state=0)
     return X_train, X_test, y_train, y_test
 
-def vectorize_fit(X):
-    v = TfidfVectorizer(tokenizer=tokenize,stop_words='english',strip_accents='unicode', lowercase=True)
-    vectorizer = v.fit_transform(X) ## removed nparray()
-    words = v.get_feature_names()
-    #top_features(v,words,10)
-    return v,vectorizer
+# def vectorize_fit(X):
+#     v = TfidfVectorizer(tokenizer=tokenize,stop_words='english',strip_accents='unicode', lowercase=True)
+#     vectorizer = v.fit_transform(X) ## removed nparray()
+#     words = v.get_feature_names()
+#     #top_features(v,words,10)
+#     return v,vectorizer
 # testing older code
 def make_vecs(X):
     v = TfidfVectorizer(tokenizer=tokenize,stop_words='english',strip_accents='unicode', lowercase=True)
     return v.fit(X) ## fit is returning vecorizer
 
-def vectorize_trans(v, X):
-    vector = v.transform(X) ## removed nparray()
-    words = v.get_feature_names()
-    top_features(v,words,10)
-    return vector
+# def vectorize_trans(v, X):
+#     vector = v.transform(X) ## removed nparray()
+#     words = v.get_feature_names()
+#     top_features(v,words,10)
+#     return vector
 
 def clf_model(X,y):
     classifier = MultinomialNB()
@@ -111,11 +112,14 @@ def score(classifier,X,y):
     return score
 
 
-def predict(classifier, X):
+def predict(model,X):
     #input classifier  and text to predict
     #Return: prediction
-    predictions= classifier.predict(d)
-    return prediction
+    print 'length X in cap_buildmodel = ' , X.shape
+
+    predictions= model.predict(X)
+    print 'length of predictions in cap_buildmodel = ' , len(predictions)
+    return predictions
 
 def top_features(classifier, words, n):
     #input: classifier, int
@@ -123,20 +127,21 @@ def top_features(classifier, words, n):
         #n = number of top words to report
     #output: list of words
     indices = np.argsort(classifier.idf_)[::-1]
-    [words[i] for i in indices[:10]]
-    print "Top words are:"
-    for i in indices[:10]:
-        print words[i]
+    return [words[i] for i in indices[:10]]
+    # print "Top words are:"
+    # for i in indices[:10]:
+    #     print words[i]
 # examples = ['hate hate hate', "great fun awsome", "sucks"]
 
+def calc_totals(pred):
+    pass
 
-def plot_datatwin(p,n,tme):
-#
-    x = np.linspace(0,len(neg), tme)
+def plot_datatwin(pos,neg,tme):
+    #
+    x = np.linspace(0,1600,6)
     # plt.plot(x, neg,x, pos)
     # plt.plot(x, reg_pos, x, reg_neg)
     total = []
-
     for i in range(0,len(pos)):
         total.append((pos[i] + neg[i]))
 
@@ -182,12 +187,12 @@ if __name__ == '__main__':
     X = clean_data(X)
     X_train, X_test, y_train, y_test = train_split(X,y)
     #tfidf,vectorizer = vectorize_fit(X_train)
-    print len(X_test), len(y_test)
-    test_vec = make_vecs(X_test)
+    test_vec = make_vecs(X_train) # from test
     #mymodel  = clf_model(vectorizer,y_train)
-    mymodel  = clf_model(test_vec.transform(X_test),y_test)
+    mymodel  = clf_model(test_vec.transform(X_train),y_train)
     test_vectors = test_vec.transform(X_test) #vectorize_trans(tfidf,X_test)
-    print score(mymodel,test_vectors,y_test) # used to be test_vectors
+    print "model score = ", score(mymodel,test_vectors,y_test) # used to be test_vectors
+    print predict(mymodel,test_vectors)
 
     with open('/Users/janehillyard/Documents/capstone/hate-speech/data/vectorizer.pkl', 'w') as f:
         pickle.dump(test_vec, f)
