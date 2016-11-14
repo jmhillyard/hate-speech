@@ -1,20 +1,15 @@
 function drawChart() {
   // var data = myJSON
   var data = new google.visualization.arrayToDataTable(myJSON);
-    // Declare columns
-  //data.addRows(myJSON);
-      console.log(myJSON);
-      //console.log(array);
-      console.log(data.getNumberOfRows());
-  // var data = google.visualization.arrayToDataTable([
-  //        ["Year","Sales","Expenses"],
-  //        ['2004',1000,400],
-  //        ['2005',1170,460],
-  //        ['2006',660,1120],
-  //        ['2007',1030,540]]);
+  console.log(myJSON)
   var options = {
     title: ' Negative Sentiment around Seacoast NH School Systems',
     curveType: 'function',
+    series: {
+            0: { color: '#1c91c0' },
+            1: { color: '#e2431e' },
+            2: { color: '#f1ca3a' }
+          },
     legend: { position: 'bottom' }
   };
 

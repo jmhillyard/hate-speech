@@ -1,6 +1,9 @@
 import pandas as pd
 import numpy as np
 import re
+import os
+import os.path
+from time import gmtime, strftime
 
 class CleanData(object):
     def __init__(self, model=None):
@@ -21,9 +24,17 @@ class CleanData(object):
 
     def convert_tweets(self, filename):
         # read the entire file into a python array
-        with open(filename, 'rb') as f:
-            data = f.readlines()
-
+        # Function:
+        # Input: file name fully qualified
+        # Output: Converted tweets ready to process OR
+        #         Message file does not exist
+        print filename
+        if os.path.isfile(filename) and os.access(filename, os.R_OK):
+            with open(filename, 'rb') as f:
+                data = f.readlines()
+        else:
+            print "Either file is missing or is not readable"
+            return 'U099'
         # remove the trailing "\n" from each line
         data = map(lambda x: x.rstrip(), data)
         data_json_str = "[" + ','.join(data) + "]"
@@ -31,3 +42,15 @@ class CleanData(object):
         df = pd.read_json(data_json_str)
         df = df['text']
         self.X = df
+        print 'at end of tweets'
+
+    def process_file(self,filename):
+        print 'in process file'
+        modifiedTime = os.path.getmtime(filename)
+        timestamp = strftime("%Y-%m-%d %H:%M:%S", gmtime()) #datetime.fromtimestamp(modifiedTime).strftime("%b-%d-%Y_%H.%M.%S")
+
+        prevName = filename
+        newName = '/Users/janehillyard/Documents/capstone/hate-speech/data/output'
+        print ' pre name', prevName
+        os.rename(prevName, newName+"_"+timestamp + ".json")
+        print(newName)

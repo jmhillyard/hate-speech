@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 import cap_buildmodel as cb
 import mymodel as mm
+import mongowork as mw
 import clean_data as cld
 from nltk.stem import SnowballStemmer
 import nltk
@@ -17,17 +18,38 @@ def list_to_html(d):
 # home page
 @app.route('/')
 def index():
-    import json
-    a=[["Year","Sales","Expenses"],
-         [2004,1000,400],
-         [2005,1170,460],
-         [2006,660,1120],
-         [2007,1030,540]]
-    cols = [["Year2","Sales2","Expenses2"]]
-    print 'these are the cols',cols
+    # Opening screen with graph and feature words
+    # setup database connection to mongo db
+    dbconn = mw.MongoWork()
+
+    # part 1 process new file if exists
+    clean = cld.CleanData()
+    return_code = ''
+    filename = '/Users/janehillyard/Documents/capstone/hate-speech/src/output.json'
+    return_code = clean.convert_tweets(filename)
+    print return_code
+    if return_code == None:
+        text = str(clean.clean_data())
+        #text = str(request.form['user_input'])
+        # do model.predict(vecorizer(text))
+        #vec = vectorizer.transform([text])
+        vec = vectorizer.transform(text)
+        words = vectorizer.get_feature_names()
+        top_f = cb.top_features(vectorizer,words,10)
+        pos,neg = np.array(mm.pred(model,vec))
+        dbconn.load_results(pos,neg)
+        data = dict({110:40, 200:300})
+        print 'I am in app.py', pos,neg, data, top_f
+        clean.process_file(filename)
+    # page = 'Section name prediction.<br><br>pos prediction: {0} <br>pos prediction: {1} <br>  Top ten words {2}'
+    # return page.format(pos, neg, top_f)
+    #return render_template('welcome.html', data = data)
+
+    # get database values for graph
+    # json list sent to HTML for graph
+    a = dbconn.get_results()
     lst = json.dumps(a)
-    print lst
-    return render_template('welcome.html', vars=lst, colstest=cols)
+    return render_template('welcome.html', vars=lst)
 
 # #
 # #
@@ -47,33 +69,6 @@ def index():
     words = vectorizer.get_feature_names()
     top_f = cb.top_features(vectorizer,words,10)
     pos,neg = np.array(mm.pred(model,vec))
-    import json
-
-    # # ... create matplotlib figure
-    # fig = cb.plot_datatwin(pos,neg,6)
-    # json01 = json.dumps(mpld3.fig_to_dict(fig))
-    import matplotlib.pyplot as plt, mpld3
-    x = np.linspace(0,6,6)
-    # plt.plot(x, neg,x, pos)
-    # plt.plot(x, reg_pos, x, reg_neg)
-    total = []
-    for i in range(0,len(pos)):
-        total.append((pos[i] + neg[i]))
-    fig, ax1 = plt.subplots()
-    print 'before plot', x, pos
-    ax1.plot(x, pos, 'b-')
-    ax1.plot(x, neg, 'r-')
-    ax1.plot(x, total, 'y-')
-    ax1.set_xlabel('Unit of Time')
-    # Make the y-axis label and tick labels match the line color.
-    ax1.set_ylabel('Number of Tweets', color='b')
-    for tl in ax1.get_yticklabels():
-        tl.set_color('b')
-    type(top_f)
-
-    # js_data = json.dumps(mpld3.fig_to_dict(fig))
-    # return render_to_response('plot.html', {"my_data": js_data})
-
 
     #mpld3.show()
     data = dict({110:40, 200:300})

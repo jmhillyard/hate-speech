@@ -23,53 +23,38 @@ class MongoWork(object):
         conn = MongoClient('mongodb://localhost:27017/')
         # connect to the students database and the ctec121 collection
         self.db = conn.hatespeech
+        return self.db
 
 
-    def load_results(self,pos,neg,duration=10,dbschool='PEA'):
-        # Function:
-        # Input:
-        # Output:
-        data = [{"school":school,'positive': pos, 'negative': neg, 'duration': duration}]
-        n = json.dumps(data)
-        self.db.results_t.insert(data)
+    def load_results(self,pos,neg,duration=10,school='PEA'):
+        # Function:  load pos and neg results
+        # Input:  # pos tweets, # neg Tweets
+        # Output: none
+        m = MongoWork()
+        db = m.connect_to_db()
+        tot = pos + neg
+        db.results_t.insert({"school":school,'positive': pos, 'negative': neg, 'duration': duration, 'total':tot})
 
 
     def get_results(self):
-        # Function:
-        # Input:
-        # Output:
+        # Function: pulls all rows from mongo db
+        # Input: None
+        # Output: list of lists with labels
         #print self.db['results_t'].find({},{'school':1, 'positive':1, 'negative':1, '_id':0})
-        tlist = [(jsonobj) for jsonobj in self.db['results_t'].find({},{'school':1, 'positive':1, 'negative':1, '_id':0})]
-        print 'in results', tlist[0]
-        print json.dumps(tlist)
-
-        return json.dumps(tlist)
-
-
-if __name__ == '__main__':
-    print 'in main'
-    mymongo = MongoWork()
-    mymongo.connect_to_db()
-    data = mymongo.get_results()
-    jdata = json.loads(data)
-    labels = ['Instance', 'Positive', 'Negative']
-    pos = [li['positive'] for li in jdata]
-    neg = [li['negative'] for li in jdata]
-    arr = np.array(labels)
-    print data
-
-    print jdata
-    i = 0
-    for p in pos:
-        for n in neg:
-            i  += 1
-            newrow = [i,p,n]
-            arr = np.append(arr,newrow)
-    # this is json
-    print data
-
-    # ['Year', 'Sales', 'Expenses'],
-    #       ['2004',  1000,      400],
-    #       ['2005',  1170,      460],
-    #       ['2006',  660,       1120],
-    #       ['2007',  1030,      540]
+        m = MongoWork()
+        db = m.connect_to_db()
+        data = [(jsonobj) for jsonobj in db['results_t'].find({},{'school':1, 'positive':1, 'negative':1, 'total':1,'_id':0})]
+        pos = [li['positive'] for li in data]
+        neg = [li['negative'] for li in data]
+        tot = [li['total'] for li in data]
+        labels = ['Instance', 'Positive', 'Negative','Total']
+        l = []
+        l.append(pos)
+        l.append(neg)
+        l.append(tot)
+        l2 = []
+        for i in range(len(data)):
+            l2.append([i,pos[i],neg[i],tot[i]])
+        # this is json
+        l2.insert(0,labels)
+        return l2
