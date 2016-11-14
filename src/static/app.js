@@ -1,7 +1,7 @@
 function drawChart() {
   // var data = myJSON
   var data = new google.visualization.arrayToDataTable(myJSON);
-  console.log(myJSON)
+  //console.log(myJSON)
   var options = {
     title: ' Negative Sentiment around Seacoast NH School Systems',
     curveType: 'function',

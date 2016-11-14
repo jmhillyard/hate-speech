@@ -12,8 +12,8 @@ def pred(model,X):
     #Return: counts of pos and neg resutls for files
     predictions= model.predict(X)
     pos,neg = cal_preds(predictions)
-    pos = np.append(400,[0,500,700, 300,1200])
-    neg= np.append(100,[0,550,200, 900,800])
+    # pos = np.append(400,[0,500,700, 300,1200])
+    # neg= np.append(100,[0,550,200, 900,800])
     return pos,neg
 
 

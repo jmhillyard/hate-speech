@@ -28,7 +28,6 @@ class CleanData(object):
         # Input: file name fully qualified
         # Output: Converted tweets ready to process OR
         #         Message file does not exist
-        print filename
         if os.path.isfile(filename) and os.access(filename, os.R_OK):
             with open(filename, 'rb') as f:
                 data = f.readlines()
@@ -42,15 +41,11 @@ class CleanData(object):
         df = pd.read_json(data_json_str)
         df = df['text']
         self.X = df
-        print 'at end of tweets'
 
     def process_file(self,filename):
-        print 'in process file'
         modifiedTime = os.path.getmtime(filename)
         timestamp = strftime("%Y-%m-%d %H:%M:%S", gmtime()) #datetime.fromtimestamp(modifiedTime).strftime("%b-%d-%Y_%H.%M.%S")
 
         prevName = filename
         newName = '/Users/janehillyard/Documents/capstone/hate-speech/data/output'
-        print ' pre name', prevName
         os.rename(prevName, newName+"_"+timestamp + ".json")
-        print(newName)

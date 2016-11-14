@@ -21,7 +21,7 @@ def index():
     # Opening screen with graph and feature words
     # setup database connection to mongo db
     dbconn = mw.MongoWork()
-
+    top_f = ['jane','bob']
     # part 1 process new file if exists
     clean = cld.CleanData()
     return_code = ''
@@ -30,17 +30,14 @@ def index():
     print return_code
     if return_code == None:
         text = str(clean.clean_data())
-        #text = str(request.form['user_input'])
-        # do model.predict(vecorizer(text))
-        #vec = vectorizer.transform([text])
         vec = vectorizer.transform(text)
         words = vectorizer.get_feature_names()
         top_f = cb.top_features(vectorizer,words,10)
         pos,neg = np.array(mm.pred(model,vec))
         dbconn.load_results(pos,neg)
-        data = dict({110:40, 200:300})
-        print 'I am in app.py', pos,neg, data, top_f
         clean.process_file(filename)
+    else:
+        top_f = 'NONE at this time.'
     # page = 'Section name prediction.<br><br>pos prediction: {0} <br>pos prediction: {1} <br>  Top ten words {2}'
     # return page.format(pos, neg, top_f)
     #return render_template('welcome.html', data = data)
@@ -49,7 +46,10 @@ def index():
     # json list sent to HTML for graph
     a = dbconn.get_results()
     lst = json.dumps(a)
-    return render_template('welcome.html', vars=lst)
+    # page = 'Section name prediction.<br><br>pos prediction: {0} <br>pos prediction: {1} <br>  Top ten words {2}'
+    # return page.format(pos, neg, top_f)
+    print top_f
+    return render_template('welcome.html', vars=lst, top=top_f )
 
 # #
 # #

@@ -9,13 +9,19 @@
     </script>
     <script type="text/javascript">
       var myJSON = decodeJSON('{{vars}}');
-      //var colstest = decodeJSON('{{colstest}}');
       // console.log(myJSON)
       // console.log('i am here');
+    </script>
+    <script type="text/javascript">
     </script>
   </head>
   <body>
     <div id="curve_chart" style="width: 900px; height: 500px"></div>
-    <div id="Stats" style="width: 100px; height: 500px"></div>
+    <h3>Most Used Words</h3>
+    <script>
+      document.write("<span class='green'> The most used words may be found here:" +" '{{top}}'</span>");
+    </script>
+
+   </body>
   </body>
 </html>
