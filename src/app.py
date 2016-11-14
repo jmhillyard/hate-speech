@@ -8,6 +8,7 @@ import mymodel as mm
 import clean_data as cld
 from nltk.stem import SnowballStemmer
 import nltk
+import json
 app = Flask(__name__)
 
 def list_to_html(d):
@@ -15,20 +16,24 @@ def list_to_html(d):
 
 # home page
 @app.route('/')
-#
-# def index():
-#     return render_template('welcome.html')
+def index():
+    import json
+    a=[["Year","Sales","Expenses"],
+         [2004,1000,400],
+         [2005,1170,460],
+         [2006,660,1120],
+         [2007,1030,540]]
+    cols = [["Year2","Sales2","Expenses2"]]
+    print 'these are the cols',cols
+    lst = json.dumps(a)
+    print lst
+    return render_template('welcome.html', vars=lst, colstest=cols)
 
-def submission_page():
-    return '''
-        <form action="/predict" method='POST' >
-            <input type="text" name="user_input" />
-            <input type="submit" />
-        </form>
-        '''
-# My word counter app
-@app.route('/predict', methods=['POST'] )
-def predict():
+# #
+# #
+# # # My word counter app
+# @app.route('/predict') # methods=['POST'] )
+# def predict():
 
     # text = filein("../data/sentimenttrain.txt")
     # text = str(cb.clean_data(text))
@@ -64,11 +69,18 @@ def predict():
     ax1.set_ylabel('Number of Tweets', color='b')
     for tl in ax1.get_yticklabels():
         tl.set_color('b')
-    mpld3.show()
+    type(top_f)
 
-    page = 'Section name prediction.<br><br>pos prediction: {0} <br>pos prediction: {1} <br>  Top ten words {2}'
-    return page.format(pos, neg, top_f)
+    # js_data = json.dumps(mpld3.fig_to_dict(fig))
+    # return render_to_response('plot.html', {"my_data": js_data})
 
+
+    #mpld3.show()
+    data = dict({110:40, 200:300})
+    print type(data)
+    # page = 'Section name prediction.<br><br>pos prediction: {0} <br>pos prediction: {1} <br>  Top ten words {2}'
+    # return page.format(pos, neg, top_f)
+    #return render_template('welcome.html', data = data)
 
 
 def tokenize(text):
