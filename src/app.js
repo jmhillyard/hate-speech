@@ -1,16 +1,16 @@
 function drawChart() {
   // var data = myJSON
   var data = new google.visualization.arrayToDataTable(myJSON);
-  //console.log(myJSON)
+  console.log(myJSON)
   var options = {
     title: ' Negative Sentiment around Seacoast NH School Systems',
-    curveType: 'none',
+    curveType: 'function',
     series: {
             0: { color: '#1c91c0' },
             1: { color: '#e2431e' },
             2: { color: '#f1ca3a' }
           },
-    legend: { position: 'center' }
+    legend: { position: 'bottom' }
   };
 
   var chart = new google.visualization.LineChart(document.getElementById('curve_chart'));

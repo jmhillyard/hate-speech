@@ -1,2 +1,8 @@
 #data to ignore
 data/training.1600000.processed.noemoticon.csv
+data/fulltest.txt
+data/output*.json
+src/output*.json
+data/sourcedata/
+data/big_test_data.txt
+data/wordlist.txt

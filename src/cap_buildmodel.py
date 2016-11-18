@@ -2,18 +2,17 @@ from __future__ import division
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.svm import SVC
-from sklearn.preprocessing import StandardScaler
-from sklearn import svm
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.naive_bayes import MultinomialNB
 import nltk
 import re
+import random
 from nltk.stem import SnowballStemmer
 from sklearn.model_selection import cross_val_score
 import matplotlib.pyplot as plt
 import cPickle as pickle
 import clean_data as cld
+import mymodel as mm
 
 class Cap_buildmodel(object):
     def __init__(self):
@@ -34,6 +33,7 @@ def process_file(filename):
     text=[]
     with open(filename) as f:
         lines = f.readlines()
+        random.shuffle(lines)
         for i in lines:
             label.append(i[0])
             text.append(i[1:])
@@ -41,18 +41,21 @@ def process_file(filename):
     y = np.array(label)
     return X,y
 
-def clean_data(X):
-    # Function: lowercase (also completed in vecorizer),
-    #           remove special characters, remove numbers
-    # Input: numpy array of strings of text
-    # Output:  numpy string of cleansed text
+# def clean_data(X):
+#     # Function: lowercase (also completed in vecorizer),
+#     #           remove special characters, remove numbers
+#     # Input: numpy array of strings of text
+#     # Output:  numpy string of cleansed text
+#     #text = [re.sub(r'[^\w\s\d]','',h.lower()) for h in X]
+#     l=[]
+#     regex = re.compile('[^a-zA-Z0-9]')
+#     for i in X:
+#         text = " ".join(filter(lambda x:x[0]!='@', i.split()))
+#         text = re.sub(r'\w+:\/{2}[\d\w-]+(\.[\d\w-]+)*(?:(?:\/[^\s/]*))*', '', text)
+#         text = re.sub(r'[^\w\s\d]','',text.lower())
+#         l.append(regex.sub(' ', str(text)))
+#     return np.array(l)
 
-    text = [re.sub(r'[^\w\s\d]','',h.lower()) for h in X]
-    regex = re.compile('[^a-zA-Z]')
-    l=[]
-    for i in text:
-        l.append(regex.sub(' ', i))
-    return np.array(l)
 
 def do_stemming(X):
     stemmed = []
@@ -60,13 +63,19 @@ def do_stemming(X):
         stemmed.append(SnowballStemmer('english').stem(item))
     return stemmed
 
+def stem_tokens(tokens,stemmer):
+    stemmed = []
+    for item in tokens:
+        stemmed.append(stemmer.stem(item))
+    return stemmed
+
 def tokenize(text):
     tokens = nltk.word_tokenize(text)
-    stems = do_stemming(tokens)
+    stems = stem_tokens(tokens,stemmer)
     return stems
 
 def train_split(X,y):
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.4, random_state=0)
+    X_train, X_test, y_train, y_test = train_test_split(X, y)
     return X_train, X_test, y_train, y_test
 
 # def vectorize_fit(X):
@@ -76,9 +85,11 @@ def train_split(X,y):
 #     #top_features(v,words,10)
 #     return v,vectorizer
 # testing older code
-def make_vecs(X):
-    v = TfidfVectorizer(tokenizer=tokenize,stop_words='english',strip_accents='unicode', lowercase=True)
-    return v.fit(X) ## fit is returning vecorizer
+def make_vecs(X):  #tokenizer=tokenize
+    v = TfidfVectorizer(tokenizer=tokenize,stop_words='english',
+         lowercase=True)#, ngram_range=(1,3))min_df=0, max_df=1)
+    v_fit = v.fit(X)
+    return v_fit ## fit is returning vecorizer
 
 # def vectorize_trans(v, X):
 #     vector = v.transform(X) ## removed nparray()
@@ -86,8 +97,8 @@ def make_vecs(X):
 #     top_features(v,words,10)
 #     return vector
 
-def clf_model(X,y):
-    classifier = MultinomialNB()
+def clf_model(X,y,alpha=.01):
+    classifier = MultinomialNB(alpha)
     classifier.fit(X, y)
     return classifier # returns the model
 
@@ -115,19 +126,16 @@ def score(classifier,X,y):
 def predict(model,X):
     #input classifier  and text to predict
     #Return: prediction
-    print 'length X in cap_buildmodel = ' , X.shape
-
     predictions= model.predict(X)
-    print 'length of predictions in cap_buildmodel = ' , len(predictions)
     return predictions
 
-def top_features(classifier, words, n):
+def top_features(vec, words, n):
     #input: classifier, int
         #classifier = tfidf vectorizer
         #n = number of top words to report
     #output: list of words
-    indices = np.argsort(classifier.idf_)[::-1]
-    return [words[i] for i in indices[:10]]
+    indices = np.argsort(vec.idf_)[::-1]
+    return [words[i] for i in indices[:n]]
     # print "Top words are:"
     # for i in indices[:10]:
     #     print words[i]
@@ -136,65 +144,56 @@ def top_features(classifier, words, n):
 def calc_totals(pred):
     pass
 
-def plot_datatwin(pos,neg,tme):
-    #
-    x = np.linspace(0,1600,6)
-    # plt.plot(x, neg,x, pos)
-    # plt.plot(x, reg_pos, x, reg_neg)
-    total = []
-    for i in range(0,len(pos)):
-        total.append((pos[i] + neg[i]))
-
-    fig, ax1 = plt.subplots()
-    s1 = pos
-    ax1.plot(x, pos, 'b-')
-    ax1.plot(x, neg, 'r-')
-    ax1.plot(x, total, 'y-')
-    ax1.set_xlabel('Unit of Time')
-    # Make the y-axis label and tick labels match the line color.
-    ax1.set_ylabel('Number of Tweets', color='b')
-    for tl in ax1.get_yticklabels():
-        tl.set_color('b')
-
-
-    plt.show()
-
-
-def plot_importance(clf, X, max_features=10):
-    '''Plot feature importance'''
-    feature_importance = clf.feature_importances_
-    # make importances relative to max importance
-    feature_importance = 100.0 * (feature_importance / feature_importance.max())
-    sorted_idx = np.argsort(feature_importance)
-    pos = np.arange(sorted_idx.shape[0]) + .5
-
-    # Show only top features
-    pos = pos[-max_features:]
-    feature_importance = (feature_importance[sorted_idx])[-max_features:]
-    feature_names = (X.columns[sorted_idx])[-max_features:]
-
-    plt.barh(pos, feature_importance, align='center')
-    plt.yticks(pos, feature_names)
-    plt.xlabel('Relative Importance')
-    plt.title('Variable Importance')
 
 
 #plot_roc(v_probs, y_test,"ROC plot of churn data","False Positive Rate (1 - Specificity)", "True Positive Rate (Sensitivity, Recall)")
 #plot_datatwin(pos,neg,len(neg))
 
 if __name__ == '__main__':
-    X, y = process_file('/Users/janehillyard/Documents/capstone/hate-speech/data/sentimenttrain.txt')
-    X = clean_data(X)
+    mymod = mm.MyModel()
+    clean = cld.CleanData()
+    stemmer = SnowballStemmer('english')
+    #split file]#old_tweets.txt .86 roc
+    # sancsv2 roc.99
+    # sentiment rox 0
+    X, y = process_file('/Users/janehillyard/Documents/capstone/hate-speech/data/gold_tweets.txt')
+    X = clean.clean_data(X)  # this is taking a bit of time
+    #y = y.astype(np.float)
     X_train, X_test, y_train, y_test = train_split(X,y)
-    #tfidf,vectorizer = vectorize_fit(X_train)
-    test_vec = make_vecs(X_train) # from test
-    #mymodel  = clf_model(vectorizer,y_train)
-    mymodel  = clf_model(test_vec.transform(X_train),y_train)
-    test_vectors = test_vec.transform(X_test) #vectorize_trans(tfidf,X_test)
-    print "model score = ", score(mymodel,test_vectors,y_test) # used to be test_vectors
-    print predict(mymodel,test_vectors)
+    train_vec = make_vecs(X_train) # from test
+    mymodel  = clf_model(train_vec.transform(X_train),y_train,.01)
+    test_vectors = train_vec.transform(X_test) #vectorize_trans(tfidf,X_test)
 
+
+    ### testing
+
+
+    print "model score = ", score(mymodel,test_vectors,y_test) # used to be test_vectors
+    pred = predict(mymodel,test_vectors)
+    words = train_vec.get_feature_names()
+    print "top features", top_features(train_vec,words, 10)
+    print "negative features", mymod.get_neg_features(words,pred)
     with open('/Users/janehillyard/Documents/capstone/hate-speech/data/vectorizer.pkl', 'w') as f:
-        pickle.dump(test_vec, f)
+        pickle.dump(train_vec, f)
     with open('/Users/janehillyard/Documents/capstone/hate-speech/data/mymodel.pkl', 'w') as f:
         pickle.dump(mymodel, f)
+
+    # method I: plt
+        #roc curve
+    from sklearn.metrics import roc_curve,auc
+    import matplotlib.pyplot as plt
+    probs = mymodel.predict_proba(test_vectors)
+    preds = probs[:,1]
+    yint = y_test.astype(np.float)
+    fpr, tpr, threshold = roc_curve(yint, preds)
+    roc_auc = auc(fpr, tpr)
+
+    plt.title('Receiver Operating Characteristic')
+    plt.plot(fpr, tpr, 'b', label = 'AUC = %0.2f' % roc_auc)
+    plt.legend(loc = 'lower right')
+    plt.plot([0, 1], [0, 1],'r--')
+    plt.xlim([0, 1])
+    plt.ylim([0, 1])
+    plt.ylabel('True Positive Rate')
+    plt.xlabel('False Positive Rate')
+    plt.show()

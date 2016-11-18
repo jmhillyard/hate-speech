@@ -3,6 +3,9 @@ from tweepy import OAuthHandler
 from tweepy import Stream
 import json
 from auth import TwitterAuth
+from time import gmtime, strftime
+import time
+import os
 
   #Very simple (non-production) Twitter stream example
   #1. Download / install python and tweepy (pip install tweepy)
@@ -14,29 +17,65 @@ from auth import TwitterAuth
 
 class StdOutListener(StreamListener):
 
+	def __init__(self, time_limit=60):
+		self.start_time = time.time()
+		self.limit = time_limit
+		super(StdOutListener, self).__init__()
+
+
 	#This function gets called every time a new tweet is received on the stream
 	def on_data(self, data):
-		#Just write data to one line in the file
-		fhOut.write(data)
+		if (time.time() - self.start_time) < self.limit:
 
-		#Convert the data to a json object (shouldn't do this in production; might slow down and miss tweets)
-		j=json.loads(data)
+			#Just write data to one line in the file
+			fhOut.write(data)
 
-		#See Twitter reference for what fields are included -- https://dev.twitter.com/docs/platform-objects/tweets
-		text=j["text"] #The text of the tweet
-		#print(text) #Print it out
+			#Convert the data to a json object (shouldn't do this in production; might slow down and miss tweets)
+			j=json.loads(data)
+
+			#See Twitter reference for what fields are included -- https://dev.twitter.com/docs/platform-objects/tweets
+			text=j["text"] #The text of the tweet
+			#print(text) #Print it out
+			## checking to see if I can stop by count
+
+			return True
+		else:
+			#Just write data to one line in the file
+			fhOut.write(data)
+
+			#Convert the data to a json object (shouldn't do this in production; might slow down and miss tweets)
+			j=json.loads(data)
+
+			#See Twitter reference for what fields are included -- https://dev.twitter.com/docs/platform-objects/tweets
+			text=j["text"] #The text of the tweet
+			#print(text) #Print it out
+			## checking to see if I can stop by count
+
+			return False
+
 
 	def on_error(self, status):
 		print("ERROR")
 		print(status)
 
+
 if __name__ == '__main__':
+
 	try:
+
 		#Create a file to store output. "a" means append (add on to previous file)
-		fhOut = open("output.json","a")
+		filename = "output.json"
+		if os.path.isfile(filename):
+			modifiedTime = os.path.getmtime(filename)
+			timestamp = strftime("%Y-%m-%d%H:%M:%S", gmtime()) #datetime.fromtimestamp(modifiedTime).strftime("%b-%d-%Y_%H.%M.%S")
+			prevName = filename
+			newName = 'output'
+			os.rename(prevName, newName+"_"+timestamp + ".json")
+
+		fhOut = open(filename,"a")
 
 		#Create the listener
-		l = StdOutListener()
+		l = StdOutListener(time_limit=600)
 		auth = OAuthHandler(TwitterAuth.consumer_key, TwitterAuth.consumer_secret)
 		auth.set_access_token(TwitterAuth.access_token, TwitterAuth.access_token_secret)
 
