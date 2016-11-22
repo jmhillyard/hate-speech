@@ -1,7 +1,10 @@
 import cPickle as pickle
 #import cleaning_script as cs
+from sklearn.feature_extraction.text import TfidfVectorizer,CountVectorizer
 import pandas as pd
+import cap_buildmodel as cb
 import numpy as np
+
 
 class MyModel(object):
     def __init__(self, model=None):
@@ -70,4 +73,12 @@ class MyModel(object):
             #print('%r => %s' % (text, pred))
             if pred =='0':
                 neg_words.append(text)
+
         return neg_words
+
+    def get_doc_frequencies(self, text, probs):
+        preds = zip(text,probs[:,0])
+        sorted_freqs= sorted (preds, key = lambda x: -x[1])
+        print 'in doc freq', type(sorted_freqs)
+        return sorted_freqs[:10]
+        #return (freqs, key = lambda x: -x[1])

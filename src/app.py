@@ -26,8 +26,8 @@ def index():
     clean = cld.CleanData()
     return_code = ''
     #print ls '/Users/janehillyard/Documents/capstone/hate-speech/src/output_2016*.json'
-    filename = '/Users/janehillyard/Documents/capstone/hate-speech/src/output.json'
-
+    filename = '/Users/janehillyard/capstone/hate-speech/src/output.json'
+#/Users/janehillyard/capstone/hate-speech/src
     text,return_code = clean.convert_tweets(filename)
     if return_code == 0:
         text = np.array(clean.clean_data(text))
@@ -35,18 +35,18 @@ def index():
         words = vectorizer.get_feature_names()
         top_f = cb.top_features(vectorizer,words,10)
         pos,neg = np.array(mymod.pred(model,vec))
-        print 'this is pos or neg',pos,neg
-        dbconn.load_results(pos,neg)
-        #indices = np.argsort(vectorizer.idf_)[::-1]
-        #print indices[2], words[2]
-        print vectorizer.idf_[::-1]
-        pred = mymod.predict(model,vec)
-        neg_words = mymod.get_neg_features(words,pred)
-        print neg_words
 
-        # clean.process_file(filename)
+        dbconn.load_results(pos,neg)
+
+        pred = mymod.predict(model,vec)
+
+        ### get most frequent neg tweets
+        probs = model.predict_proba(vec)
+        top_neg_tweets = mymod.get_doc_frequencies(text, probs)
+        clean.process_file(filename)
     else:
-        top_f = 'NONE at this time.'
+        top_f = 'There are no new Tweets to Process.'
+        top_neg_tweets= ['There are no new Tweets to Process.',0.000]
     # page = 'Section name prediction.<br><br>pos prediction: {0} <br>pos prediction: {1} <br>  Top ten words {2}'
     # return page.format(pos, neg, top_f)
     #return render_template('welcome.html', data = data)
@@ -55,10 +55,12 @@ def index():
     # json list sent to HTML for graph
     a = dbconn.get_results()
     lst = json.dumps(a)
+    lst_top_neg = json.dumps(top_neg_tweets)
+
     # page = 'Section name prediction.<br><br>pos prediction: {0} <br>pos prediction: {1} <br>  Top ten words {2}'
     # return page.format(pos, neg, top_f)
     # print top_f
-    return render_template('welcome.html', vars=lst, top=top_f )
+    return render_template('welcome.html', vars=lst, top_tweets=lst_top_neg)
 
 # #
 # #

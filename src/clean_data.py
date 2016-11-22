@@ -47,7 +47,7 @@ class CleanData(object):
                 data = f.readlines()
         else:
             print "Either file is missing or is not readable"
-            return 'U099'
+            return np.array('None'),'U099'
         # remove the trailing "\n" from each line
         data = map(lambda x: x.rstrip(), data)
         data_json_str = "[" + ','.join(data) + "]"
@@ -84,8 +84,8 @@ class CleanData(object):
 
     def process_file(self,filename):
         modifiedTime = os.path.getmtime(filename)
-        timestamp = strftime("%Y-%m-%d %H:%M:%S", gmtime()) #datetime.fromtimestamp(modifiedTime).strftime("%b-%d-%Y_%H.%M.%S")
-
+        timestamp = strftime("%Y-%m-%d%H:%M:%S", gmtime()) #datetime.fromtimestamp(modifiedTime).strftime("%b-%d-%Y_%H.%M.%S")
         prevName = filename
-        newName = '/Users/janehillyard/Documents/capstone/hate-speech/data/output'
-        os.rename(prevName, newName+"_"+timestamp + ".json")
+        newName = '/Users/janehillyard/capstone/hate-speech/data/output'
+        print newName
+        os.rename(filename, newName+"_"+timestamp + ".json")

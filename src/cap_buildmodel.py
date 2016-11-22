@@ -2,12 +2,12 @@ from __future__ import division
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer,CountVectorizer
 from sklearn.naive_bayes import MultinomialNB
 import nltk
 import re
 import random
-from nltk.stem import SnowballStemmer
+from nltk.stem import SnowballStemmer,WordNetLemmatizer
 from sklearn.model_selection import cross_val_score
 import matplotlib.pyplot as plt
 import cPickle as pickle
@@ -69,33 +69,29 @@ def stem_tokens(tokens,stemmer):
         stemmed.append(stemmer.stem(item))
     return stemmed
 
+def lem_tokens(tokens,stemmer):
+    lem=[]
+    for item in tokens:
+        lem.append(lemma.lemmatize(item))
+    return lem
+
 def tokenize(text):
     tokens = nltk.word_tokenize(text)
-    stems = stem_tokens(tokens,stemmer)
-    return stems
+    tokens = stem_tokens(tokens,stemmer)
+    tokens = lem_tokens(tokens,lemma)
+    return tokens
 
 def train_split(X,y):
     X_train, X_test, y_train, y_test = train_test_split(X, y)
     return X_train, X_test, y_train, y_test
 
-# def vectorize_fit(X):
-#     v = TfidfVectorizer(tokenizer=tokenize,stop_words='english',strip_accents='unicode', lowercase=True)
-#     vectorizer = v.fit_transform(X) ## removed nparray()
-#     words = v.get_feature_names()
-#     #top_features(v,words,10)
-#     return v,vectorizer
-# testing older code
+
 def make_vecs(X):  #tokenizer=tokenize
+
     v = TfidfVectorizer(tokenizer=tokenize,stop_words='english',
          lowercase=True)#, ngram_range=(1,3))min_df=0, max_df=1)
     v_fit = v.fit(X)
     return v_fit ## fit is returning vecorizer
-
-# def vectorize_trans(v, X):
-#     vector = v.transform(X) ## removed nparray()
-#     words = v.get_feature_names()
-#     top_features(v,words,10)
-#     return vector
 
 def clf_model(X,y,alpha=.01):
     classifier = MultinomialNB(alpha)
@@ -141,10 +137,6 @@ def top_features(vec, words, n):
     #     print words[i]
 # examples = ['hate hate hate', "great fun awsome", "sucks"]
 
-def calc_totals(pred):
-    pass
-
-
 
 #plot_roc(v_probs, y_test,"ROC plot of churn data","False Positive Rate (1 - Specificity)", "True Positive Rate (Sensitivity, Recall)")
 #plot_datatwin(pos,neg,len(neg))
@@ -153,36 +145,42 @@ if __name__ == '__main__':
     mymod = mm.MyModel()
     clean = cld.CleanData()
     stemmer = SnowballStemmer('english')
+    lemma = WordNetLemmatizer()
+
     #split file]#old_tweets.txt .86 roc
     # sancsv2 roc.99
     # sentiment rox 0
-    X, y = process_file('/Users/janehillyard/Documents/capstone/hate-speech/data/gold_tweets.txt')
+    X, y = process_file('/Users/janehillyard/capstone/hate-speech/data/gold_tweets.txt')
     X = clean.clean_data(X)  # this is taking a bit of time
-    #y = y.astype(np.float)
     X_train, X_test, y_train, y_test = train_split(X,y)
     train_vec = make_vecs(X_train) # from test
     mymodel  = clf_model(train_vec.transform(X_train),y_train,.01)
     test_vectors = train_vec.transform(X_test) #vectorize_trans(tfidf,X_test)
 
 
-    ### testing
+    ### Model Scoring
 
 
     print "model score = ", score(mymodel,test_vectors,y_test) # used to be test_vectors
     pred = predict(mymodel,test_vectors)
     words = train_vec.get_feature_names()
     print "top features", top_features(train_vec,words, 10)
-    print "negative features", mymod.get_neg_features(words,pred)
-    with open('/Users/janehillyard/Documents/capstone/hate-speech/data/vectorizer.pkl', 'w') as f:
+    #print "negative features", mymod.get_neg_features(words,y_train)
+    with open('/Users/janehillyard/capstone/hate-speech/data/vectorizer.pkl', 'w') as f:
         pickle.dump(train_vec, f)
-    with open('/Users/janehillyard/Documents/capstone/hate-speech/data/mymodel.pkl', 'w') as f:
+    with open('/Users/janehillyard/capstone/hate-speech/data/mymodel.pkl', 'w') as f:
         pickle.dump(mymodel, f)
 
+    ### get most frequent words
+    probs = mymodel.predict_proba(test_vectors)
+    frequent_words = mymod.get_doc_frequencies(X_test, probs)
+    print "top 10 Negative tweets  are: ",frequent_words
     # method I: plt
         #roc curve
     from sklearn.metrics import roc_curve,auc
     import matplotlib.pyplot as plt
-    probs = mymodel.predict_proba(test_vectors)
+
+
     preds = probs[:,1]
     yint = y_test.astype(np.float)
     fpr, tpr, threshold = roc_curve(yint, preds)
