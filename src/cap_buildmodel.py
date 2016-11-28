@@ -93,7 +93,7 @@ def make_vecs(X):  #tokenizer=tokenize
     v_fit = v.fit(X)
     return v_fit ## fit is returning vecorizer
 
-def clf_model(X,y,alpha=.01):
+def clf_model(X,y,alpha=1):
     classifier = MultinomialNB(alpha)
     classifier.fit(X, y)
     return classifier # returns the model
