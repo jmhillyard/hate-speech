@@ -32,9 +32,9 @@ def lem_tokens(tokens,stemmer):
 
 stemmer = SnowballStemmer('english')
 lemma = WordNetLemmatizer()
-with open('../data/vectorizer.pkl') as f:
+with open('data/vectorizer.pkl') as f:
     vectorizer = pickle.load(f)
-with open('../data/mymodel.pkl') as f:
+with open('data/mymodel.pkl') as f:
     model = pickle.load(f)
 
 
@@ -95,4 +95,4 @@ if __name__ == '__main__':
     #     model = pickle.load(f)
     # this it to run local:
     # application.run(host='0.0.0.0', port=8010, debug=True)
-    application.run(host='0.0.0.0', port=8010, debug=True)
+    application.run(host='0.0.0.0')

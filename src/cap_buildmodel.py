@@ -126,7 +126,7 @@ if __name__ == '__main__':
     #split file]#old_tweets.txt .86 roc
     # sancsv2 roc.99
     # sentiment rox 0
-    X, y = process_file('/Users/janehillyard/capstone/hate-speech/data/gold_tweets.txt')
+    X, y = process_file('data/gold_tweets.txt')
     X = clean.clean_data(X)  # this is taking a bit of time
     X_train, X_test, y_train, y_test = train_split(X,y)
     train_vec = make_vecs(X_train) # from test
@@ -144,9 +144,9 @@ if __name__ == '__main__':
     print'this is the classification report', classification_report(y_test, pred)
     print "top features", top_features(train_vec,words, 10)
     #print "negative features", mymod.get_neg_features(words,y_train)
-    with open('/Users/janehillyard/capstone/hate-speech/data/vectorizer.pkl', 'w') as f:
+    with open('data/vectorizer.pkl', 'w') as f:
         pickle.dump(train_vec, f)
-    with open('/Users/janehillyard/capstone/hate-speech/data/mymodel.pkl', 'w') as f:
+    with open('data/mymodel.pkl', 'w') as f:
         pickle.dump(mymodel, f)
 
     ### get most frequent words
