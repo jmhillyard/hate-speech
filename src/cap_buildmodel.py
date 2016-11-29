@@ -10,7 +10,6 @@ import re
 import random
 from nltk.stem import SnowballStemmer,WordNetLemmatizer
 from sklearn.model_selection import cross_val_score
-from sklearn import svm
 import matplotlib.pyplot as plt
 import cPickle as pickle
 import clean_data as cld
@@ -18,8 +17,6 @@ import mymodel as mm
 
 class Cap_buildmodel(object):
     def __init__(self):
-        #self.df = clean.load_and_clean('data.json')
-        #self.text_features = ct.html_table(df['name'], df['description'])
         self.X_train = None
         self.y_train = None
         self.X_test = None
@@ -42,28 +39,6 @@ def process_file(filename):
     X = np.array(text)
     y = np.array(label)
     return X,y
-
-# def clean_data(X):
-#     # Function: lowercase (also completed in vecorizer),
-#     #           remove special characters, remove numbers
-#     # Input: numpy array of strings of text
-#     # Output:  numpy string of cleansed text
-#     #text = [re.sub(r'[^\w\s\d]','',h.lower()) for h in X]
-#     l=[]
-#     regex = re.compile('[^a-zA-Z0-9]')
-#     for i in X:
-#         text = " ".join(filter(lambda x:x[0]!='@', i.split()))
-#         text = re.sub(r'\w+:\/{2}[\d\w-]+(\.[\d\w-]+)*(?:(?:\/[^\s/]*))*', '', text)
-#         text = re.sub(r'[^\w\s\d]','',text.lower())
-#         l.append(regex.sub(' ', str(text)))
-#     return np.array(l)
-
-
-def do_stemming(X):
-    stemmed = []
-    for item in X:
-        stemmed.append(SnowballStemmer('english').stem(item))
-    return stemmed
 
 def stem_tokens(tokens,stemmer):
     stemmed = []
@@ -88,8 +63,7 @@ def train_split(X,y):
     return X_train, X_test, y_train, y_test
 
 
-def make_vecs(X):  #tokenizer=tokenize
-
+def make_vecs(X):
     v = TfidfVectorizer(tokenizer=tokenize,stop_words='english',
          lowercase=True)#, ngram_range=(1,3))min_df=0, max_df=1)
     v_fit = v.fit(X)
@@ -156,7 +130,7 @@ if __name__ == '__main__':
     X = clean.clean_data(X)  # this is taking a bit of time
     X_train, X_test, y_train, y_test = train_split(X,y)
     train_vec = make_vecs(X_train) # from test
-    mymodel  = clf_model(train_vec.transform(X_train),y_train,.01)
+    mymodel  = clf_model(train_vec.transform(X_train),y_train,1.5)
     test_vectors = train_vec.transform(X_test) #vectorize_trans(tfidf,X_test)
 
 
@@ -167,7 +141,7 @@ if __name__ == '__main__':
     pred = predict(mymodel,test_vectors)
     words = train_vec.get_feature_names()
     print "here is clssification report"
-    print classification_report(y_test, pred)
+    print'this is the classification report', classification_report(y_test, pred)
     print "top features", top_features(train_vec,words, 10)
     #print "negative features", mymod.get_neg_features(words,y_train)
     with open('/Users/janehillyard/capstone/hate-speech/data/vectorizer.pkl', 'w') as f:
@@ -179,6 +153,8 @@ if __name__ == '__main__':
     probs = mymodel.predict_proba(test_vectors)
     frequent_words = mymod.get_doc_frequencies(X_test, probs)
     print "top 10 Negative tweets  are: ",frequent_words
+
+
     # method I: plt
         #roc curve
     from sklearn.metrics import roc_curve,auc

@@ -3,7 +3,7 @@ import numpy as np
 import re
 import os
 import os.path
-import yaml
+#import yaml
 import json
 from time import gmtime, strftime
 from nltk.corpus import wordnet
@@ -17,21 +17,13 @@ class CleanData(object):
         #           remove special characters, remove numbers
         # Input: numpy array of strings of text
         # Output:  numpy string of cleansed text
-        #text = [re.sub(r'[^\w\s\d]','',h.lower()) for h in X]
-        l2=[]
         l=[]
         regex = re.compile('[^a-zA-Z]')
         for i in X:
-
             text = " ".join(filter(lambda x:x[0]!='@', i.split()))
             text = re.sub(r'\w+:\/{2}[\d\w-]+(\.[\d\w-]+)*(?:(?:\/[^\s/]*))*', '', text)
             text = re.sub(r'[^\w\s\d]','',text.lower())
             l.append(regex.sub(' ', str(text)))
-            # for word in line.split():
-            #     if wordnet.synsets(word):
-            #         l.append(word)
-            # if text != '':
-            #     l.append(str(text))
         return np.array(l)
 
 
@@ -42,11 +34,11 @@ class CleanData(object):
         # Output: Converted tweets ready to process OR
         #         Message file does not exist
         self.X=[]
-        if os.path.isfile(filename) and os.access(filename, os.R_OK):
+        if os.path.isfile(filename) and os.access(filename, os.R_OK) and os.rename(filename, filename):
             with open(filename, 'rb') as f:
                 data = f.readlines()
         else:
-            print "Either file is missing or is not readable"
+            print "Either file is missing, in use  or is not readable"
             return np.array('None'),'U099'
         # remove the trailing "\n" from each line
         data = map(lambda x: x.rstrip(), data)
