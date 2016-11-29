@@ -4,11 +4,13 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer,CountVectorizer
 from sklearn.naive_bayes import MultinomialNB
+from sklearn.metrics import classification_report
 import nltk
 import re
 import random
 from nltk.stem import SnowballStemmer,WordNetLemmatizer
 from sklearn.model_selection import cross_val_score
+from sklearn import svm
 import matplotlib.pyplot as plt
 import cPickle as pickle
 import clean_data as cld
@@ -111,7 +113,7 @@ def score(classifier,X,y):
     #       data vectors
     #       labels
     #Output: score
-    # cross_val_scores = cross_val_score(clf, train_vectors, y_train,  cv=5)
+    # cross_val_scores = cross_val_score(classifier, X, y,  cv=5)
     # print("Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2))
     # nltk.classify.accuracy(cl,test_vectors)
     # v_probs = clf.predict_proba(test_vectors)[:, 1]
@@ -164,6 +166,8 @@ if __name__ == '__main__':
     print "model score = ", score(mymodel,test_vectors,y_test) # used to be test_vectors
     pred = predict(mymodel,test_vectors)
     words = train_vec.get_feature_names()
+    print "here is clssification report"
+    print classification_report(y_test, pred)
     print "top features", top_features(train_vec,words, 10)
     #print "negative features", mymod.get_neg_features(words,y_train)
     with open('/Users/janehillyard/capstone/hate-speech/data/vectorizer.pkl', 'w') as f:
