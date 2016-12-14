@@ -36,14 +36,14 @@ class DbWork(object):
         tot = pos + neg
         db.results_t.insert({"school":school,'positive': pos, 'negative': neg, 'duration': duration, 'total':tot})
         # adding DYNAMO load
-        # # get most recent object nd write_ob
-        # oldid = get_records('objid_control_t')
-        # print oldid[1]
+        # get most recent object nd write_ob
+        # new_objid = get_new_dynamo_objid('objid_control_t')
+        # print str(new_objid)
         # # oldid = [li['objID'] for li in oldid]
         # # print int(oldid)
         # # oldid = int(oldid) + 1
-        # print oldid
-        # write_obj('objid_control_t', {'objID':'1'})
+        # write_dynamo_rec('results_t', {'id':str(new_objid),'school':school,'positive': pos, 'negative': neg, 'duration': duration, 'total':tot})
+        # write_new_dynamo_objid('objid_control_t',{'objID':str(new_objid)})
 
     def get_results(self):
         # Function: pulls all rows from mongo db
@@ -66,45 +66,54 @@ class DbWork(object):
             l2.append([i,pos[i],neg[i],tot[i]])
         # this is json
         l2.insert(0,labels)
+        # dynamodb
+        # output = get_dynamo_records("results_t")
+        # print 'in get results', type(output)
+
+
         return l2
 
 
 # # Get the service resource.
 # dynamodb = boto3.resource('dynamodb')
 
-def Write_Record(TableName, JSON):
-    dynamodb = boto3.resource('dynamodb')
-    table = dynamodb.Table(TableName)
-    print 'write record to dynamo', table
-    print JSON
-    table.put_item(
-       Item={
+    def write_dynamo_rec(TableName, JSON):
+        dynamodb = boto3.resource('dynamodb')
+        table = dynamodb.Table(TableName)
+        table.put_item(
+           Item={
 
-           'ObjID': JSON['event_created'],
-           'school': JSON['school'],
-           'positive': JSON['positive'],
-           'negative': JSON['negative'],
-           'duration': JSON['duration'],
-           'total': JSON['total'],
-       }
+               'ObjID': JSON['id'],
+               'school': JSON['school'],
+               'positive': JSON['positive'],
+               'negative': JSON['negative'],
+               'duration': JSON['duration'],
+               'total': JSON['total']
+           }
 
-    )
+        )
 
-def write_obj(TableName, JSON):
-    dynamodb = boto3.resource('dynamodb')
-    table = dynamodb.Table(TableName)
-    print 'write record to dynamo', table
-    print JSON
-    table.put_item(
-       Item={
+    def get_new_dynamo_objid(tablename):
+        oldid = get_dynamo_records(tablename)
+        oldid = oldid.values()[1]
+        seq = [x['objID'] for x in oldid]
+        oldid = max(seq)
+        return int(oldid)+1
 
-           'objID': JSON['objID']
-       }
+    def write_new_dynamo_objid(tablename,JSON):
+        dynamodb = boto3.resource('dynamodb')
+        table = dynamodb.Table(tablename)
+        print 'write new record to dynamo for object id', JSON
+        table.put_item(
+           Item={
 
-    )
+               'objID': JSON['objID']
+           }
+        )
 
-def get_records(table):
-    dynamodb = boto3.resource('dynamodb')
-    table = dynamodb.Table(table)
-    response = table.scan()
-    return response
+    def get_dynamo_records(tablename):
+        dynamodb = boto3.resource('dynamodb')
+        table = dynamodb.Table(tablename)
+        response = table.scan()
+        print response
+        return response

@@ -13,29 +13,7 @@ application = Flask(__name__)
 # this is for AWS porting below
 # global vectorizer
 # global model
-def tokenize(text):
-    tokens = nltk.word_tokenize(text)
-    tokens = stem_tokens(tokens,stemmer)
-    tokens = lem_tokens(tokens,lemma)
-    return tokens
-def stem_tokens(tokens,stemmer):
-    stemmed = []
-    for item in tokens:
-        stemmed.append(stemmer.stem(item))
-    return stemmed
 
-def lem_tokens(tokens,stemmer):
-    lem=[]
-    for item in tokens:
-        lem.append(lemma.lemmatize(item))
-    return lem
-
-stemmer = SnowballStemmer('english')
-lemma = WordNetLemmatizer()
-with open('data/vectorizer.pkl') as f:
-    vectorizer = pickle.load(f)
-with open('data/mymodel.pkl') as f:
-    model = pickle.load(f)
 
 
 # this is for AWS porting above
@@ -67,7 +45,7 @@ def index():
         ### get most frequent neg tweets
         probs = model.predict_proba(vec)
         top_neg_tweets = mymod.get_doc_frequencies(text, probs)
-        clean.process_file(filename)
+        #clean.process_file(filename)
     else:
         top_f = 'There are no new Tweets to Process.'
         top_neg_tweets= ['There are no new Tweets to Process.',0.000]
@@ -95,4 +73,28 @@ if __name__ == '__main__':
     #     model = pickle.load(f)
     # this it to run local:
     # application.run(host='0.0.0.0', port=8010, debug=True)
-    application.run(host='0.0.0.0')
+    def tokenize(text):
+        tokens = nltk.word_tokenize(text)
+        tokens = stem_tokens(tokens,stemmer)
+        tokens = lem_tokens(tokens,lemma)
+        return tokens
+    def stem_tokens(tokens,stemmer):
+        stemmed = []
+        for item in tokens:
+            stemmed.append(stemmer.stem(item))
+        return stemmed
+
+    def lem_tokens(tokens,stemmer):
+        lem=[]
+        for item in tokens:
+            lem.append(lemma.lemmatize(item))
+        return lem
+
+    stemmer = SnowballStemmer('english')
+    lemma = WordNetLemmatizer()
+    with open('data/vectorizer.pkl') as f:
+        vectorizer = pickle.load(f)
+    with open('data/mymodel.pkl') as f:
+        model = pickle.load(f)
+
+    application.run(host='0.0.0.0', port=8010, debug=True)

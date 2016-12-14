@@ -34,12 +34,14 @@ class CleanData(object):
         # Output: Converted tweets ready to process OR
         #         Message file does not exist
         self.X=[]
-        if os.path.isfile(filename) and os.access(filename, os.R_OK) and os.rename(filename, filename):
+        if os.path.isfile(filename) and os.access(filename, os.R_OK):
             with open(filename, 'rb') as f:
                 data = f.readlines()
         else:
             print "Either file is missing, in use  or is not readable"
-            return np.array('None'),'U099'
+        with open(filename, 'rb') as f:
+            data = f.readlines()
+            #return np.array('None'),'U099'
         # remove the trailing "\n" from each line
         data = map(lambda x: x.rstrip(), data)
         data_json_str = "[" + ','.join(data) + "]"
@@ -78,6 +80,6 @@ class CleanData(object):
         modifiedTime = os.path.getmtime(filename)
         timestamp = strftime("%Y-%m-%d%H:%M:%S", gmtime()) #datetime.fromtimestamp(modifiedTime).strftime("%b-%d-%Y_%H.%M.%S")
         prevName = filename
-        newName = '/Users/janehillyard/capstone/hate-speech/data/output'
+        newName = 'data/output'
         print newName
         os.rename(filename, newName+"_"+timestamp + ".json")
